@@ -1,13 +1,13 @@
-application: helloworld
-version: 1
+application: 3wgmovo
+version: 0
 runtime: go
 api_version: 3
 
 handlers:
-- url: /.*
-  script: _go_app
-  login: required
-
 - url: /admin/.*
   script: _go_app
-  login: admin
+#  login: admin
+
+- url: /
+  script: _go_app
+#  login: required
