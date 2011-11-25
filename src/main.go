@@ -44,7 +44,8 @@ func root(w http.ResponseWriter, r *http.Request) {
     url,_ = user.LogoutURL(c, "/")
     loginText = "Logout"
   }
-  s, err := C1Login(c, "usr", "pwd")
+  client := GetClient(c)
+  s, err := C1Login(client, "usr", "pwd")
   if err != nil {
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
