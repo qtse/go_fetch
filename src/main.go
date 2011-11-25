@@ -32,6 +32,7 @@ func root(w http.ResponseWriter, r *http.Request) {
   var err os.Error
   if _,loggedIn,err = IsAuth(c); err != nil {
     http.Error(w, err.String(), http.StatusInternalServerError)
+    return
   }
 
   var url string
@@ -43,7 +44,12 @@ func root(w http.ResponseWriter, r *http.Request) {
     url,_ = user.LogoutURL(c, "/")
     loginText = "Logout"
   }
-  l := []string{"abc", "def"}
+  s, err := C1Login(c, "usr", "pwd")
+  if err != nil {
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
+  l := []string{s, "def"}
   p := Page{Text: "123", TextList: l, Url: url, LoginText: loginText}
   renderTemplate(w, "template", &p)
 }
