@@ -46,8 +46,7 @@ func IsAuth(c appengine.Context) (bool, bool, os.Error) {
 }
 
 type AppUser struct {
-  User user.User
-  Access int
+  Access int `datastore:",noindex"`
 }
 
 func lookupUser(u *user.User, c appengine.Context) (bool,os.Error) {
@@ -66,17 +65,17 @@ func lookupAdmin(u *user.User, c appengine.Context) bool {
 }
 
 func newUser(u *user.User, c appengine.Context) os.Error {
-  au := AppUser{User:*u, Access:1}
-  return saveAppUser(au,c)
+  au := AppUser{Access:1}
+  return saveAppUser(u.Email,au,c)
 }
 
 func newAdmin(u *user.User, c appengine.Context) os.Error {
-  au := AppUser{User:*u, Access:2}
-  return saveAppUser(au,c)
+  au := AppUser{Access:2}
+  return saveAppUser(uEmail,au,c)
 }
 
-func saveAppUser(au AppUser, c appengine.Context) os.Error {
-  key := datastore.NewKey(c, "AppUser", au.User.Email, 0, nil)
-  _,err := datastore.Put(c,key,au)
+func saveAppUser(email string, au AppUser, c appengine.Context) os.Error {
+  key := datastore.NewKey(c, "AppUser", email, 0, nil)
+  _,err := datastore.Put(c,key,&au)
   return err
 }
