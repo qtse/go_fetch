@@ -7,6 +7,14 @@ import (
     "os"
     )
 
+var UAuth struct {BANNED, USER, ADMIN int}
+
+func init() {
+  UAuth.BANNED = 0
+  UAuth.USER = 1
+  UAuth.ADMIN = 2
+}
+
 func IsAuth(c appengine.Context) (bool, bool, os.Error) {
   u := user.Current(c)
   if u == nil {
@@ -65,13 +73,13 @@ func lookupAdmin(u *user.User, c appengine.Context) bool {
 }
 
 func newUser(u *user.User, c appengine.Context) os.Error {
-  au := AppUser{Access:1}
+  au := AppUser{Access:UAuth.USER}
   return saveAppUser(u.Email,au,c)
 }
 
 func newAdmin(u *user.User, c appengine.Context) os.Error {
-  au := AppUser{Access:2}
-  return saveAppUser(uEmail,au,c)
+  au := AppUser{Access:UAuth.ADMIN}
+  return saveAppUser(u.Email,au,c)
 }
 
 func saveAppUser(email string, au AppUser, c appengine.Context) os.Error {
