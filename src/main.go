@@ -3,6 +3,7 @@ package movo
 import (
     "appengine"
     "appengine/user"
+    "fmt"
     "http"
     "os"
 ///    "io/ioutil"
@@ -45,12 +46,24 @@ func root(w http.ResponseWriter, r *http.Request) {
     loginText = "Logout"
   }
   client := GetClient(c)
-  s, err := C1Login(client, "usr", "pwd")
+  session, err := C1Login(client, usr, pwd)
   if err != nil {
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
   }
-  l := []string{s, "def"}
+  s := fmt.Sprint(session)
+  s2,err := GetActDetail(client, session, []uint{8524})
+  if err != nil {
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
+  session,err = C1Logout(client, session)
+  if err != nil {
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
+  s3 := fmt.Sprint(session)
+  l := []string{s, s3, fmt.Sprint(s2)}
   p := Page{Text: "123", TextList: l, Url: url, LoginText: loginText}
   renderTemplate(w, "template", &p)
 }
