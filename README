@@ -12,6 +12,8 @@ Details RE: C1
 * Login - https://cadetone.aafc.org.au/logon.php
 -- POST, params 'ServiceNo'=xxx, 'Password'=xxx
 
+* Logout - https://cadetone.aafc.org.au/logout.php
+
 * Activity Details - https://cadetone.aafc.org.au/activities/viewactivity.php?ActID=xxxx
 -- Info contained in the subtable of the 3rd table
 -- Info currently scrapped by direct lookup of table headers
