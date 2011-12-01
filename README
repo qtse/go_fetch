@@ -15,7 +15,7 @@ Details RE: C1
 * Logout - https://cadetone.aafc.org.au/logout.php
 
 * Activity Details - https://cadetone.aafc.org.au/activities/viewactivity.php?ActID=xxxx
--- Info contained in the subtable of the 3rd table
+-- Info contained in the 1st subtable of table with id='body1'
 -- Info currently scrapped by direct lookup of table headers
 
 * Nominal Roll - https://cadetone.aafc.org.au/activities/nominalroll.php?ActID=xxxx
