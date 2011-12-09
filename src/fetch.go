@@ -509,5 +509,17 @@ func printNode(c appengine.Context, n *html.Node, ind int) {
   }
 }
 
+func c1LoginHandler(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+  C1Login(c, usr, pwd)
+  http.Redirect(w, r, "/", 302)
+}
+
+func c1LogoutHandler(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+  C1Logout(c)
+  http.Redirect(w, r, "/", 302)
+}
+
 func init() {
 }
