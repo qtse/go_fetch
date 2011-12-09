@@ -20,3 +20,15 @@ Details RE: C1
 
 * Nominal Roll - https://cadetone.aafc.org.au/activities/nominalroll.php?ActID=xxxx
 -- 2nd-5th subtables of id="body1", emails just below each table in same order as names. Need to remove 2x header rows/table.
+
+* Member search - https://cadetone.aafc.org.au/searchmember.php?PageRef=memberdetails&amp;Members=
+-- POST fields: LastNametxt="", ServiceNotxt=<ServiceNo>, Search="Search", Searchflag="formsearch"
+---- 2nd subtable of id="main1", row2, 1st <th>, input button's onclick as link
+-- GET that link
+---- under id="main1", table fields (watch for trailing nbsp)
+----------"Sex:"
+----------"Date of Birth:"
+----------"Home Phone:"
+----------"Business Phone:"
+----------"Mobile Phone:"
+----------"AAFC Email Address:"
