@@ -3,3 +3,5 @@ index.yaml
 Makefile
 dev_appserver.datastore
 local.go
+private.go
+sample*.html
