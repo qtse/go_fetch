@@ -3,12 +3,10 @@ package movo
 import (
     "appengine"
     "appengine/delay"
-///    "appengine/taskqueue"
     "appengine/user"
 ///    "fmt"
     "http"
     "os"
-///    "io/ioutil"
     "template"
 ///    "time"
     )
@@ -55,13 +53,8 @@ func root(w http.ResponseWriter, r *http.Request) {
 ///  }
 ///  s := fmt.Sprint(session)
 ///  skey := c1SessionKey(session)
-  skey := ""
-///  t := taskqueue.NewPOSTTask("/fetchActDetail", map[string][]string{"skey": {skey}, "actId":{string(8524)}})
-///  if _, err := taskqueue.Add(c, t, ""); err != nil {
-///    http.Error(w, err.String(), http.StatusInternalServerError)
-///    return
-///  }
-  delay.Func("key", fetchActDetail).Call(c, skey, 8525)
+///  delay.Func("key", fetchActDetail).Call(c, skey, 8525)
+  delay.Func("key", fetchNomRoll).Call(c, skey, 8525)
   s3 := ""
 
 ///  s2,err := GetActDetail(client, session, []uint{8524})
