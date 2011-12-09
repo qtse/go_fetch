@@ -97,7 +97,7 @@ func fetchActDetail(c appengine.Context, skey string, actId int) os.Error {
 
 ///func parseActDetail(c appengine.Context, r *io.ReadCloser) (*ActDetail, os.Error) {
 func parseActDetail(c appengine.Context) (*ActDetail, os.Error) {
-  tmp := strings.NewReader(doc)
+  tmp := strings.NewReader(sampleActHtml)
   r := &tmp
   n,err := html.Parse(*r)
   if err != nil {
@@ -153,24 +153,24 @@ func parseActDetail(c appengine.Context) (*ActDetail, os.Error) {
 }
 
 func fetchNomRoll(c appengine.Context, skey string, actId int) os.Error {
-  req,err := http.NewRequest("GET", fmt.Sprintf("https://cadetone.aafc.org.au/activities/nominalroll.php?ActID=%d",actId), nil)
-  if err != nil {
-    c.Errorf("Fetch Roll - actId:%d - %s", actId, err.String())
-    return err
-  }
-  session := c1SessionCookie(skey)
-  injectSession(req,session)
-  resp, err := GetClient(c).Do(req)
-  if err != nil {
-    c.Errorf("Fetch Roll - actId:%d - %s", actId, err.String())
-    return err
-  }
-  defer resp.Body.Close()
+///  req,err := http.NewRequest("GET", fmt.Sprintf("https://cadetone.aafc.org.au/activities/nominalroll.php?ActID=%d",actId), nil)
+///  if err != nil {
+///    c.Errorf("Fetch Roll - actId:%d - %s", actId, err.String())
+///    return err
+///  }
+///  session := c1SessionCookie(skey)
+///  injectSession(req,session)
+///  resp, err := GetClient(c).Do(req)
+///  if err != nil {
+///    c.Errorf("Fetch Roll - actId:%d - %s", actId, err.String())
+///    return err
+///  }
+///  defer resp.Body.Close()
 
-  c.Infof("Fetch Roll OK - actId:%d", actId)
+///  c.Infof("Fetch Roll OK - actId:%d", actId)
 
-  res,err := parseNomRoll(c, &resp.Body)
-///  res,err := parseNomRoll(c)
+///  res,err := parseNomRoll(c, &resp.Body)
+  res,err := parseNomRoll(c)
   if err != nil {
     c.Errorf("Fetch Roll - actId:%d - %s", actId, err.String())
     return err
@@ -185,10 +185,10 @@ func fetchNomRoll(c appengine.Context, skey string, actId int) os.Error {
   return err
 }
 
-func parseNomRoll(c appengine.Context, r *io.ReadCloser) (*NomRoll, os.Error) {
-///func parseNomRoll(c appengine.Context) (*NomRoll, os.Error) {
-///  tmp := strings.NewReader(doc2)
-///  r := &tmp
+///func parseNomRoll(c appengine.Context, r *io.ReadCloser) (*NomRoll, os.Error) {
+func parseNomRoll(c appengine.Context) (*NomRoll, os.Error) {
+  tmp := strings.NewReader(sampleRollHtml)
+  r := &tmp
   n,err := html.Parse(*r)
   if err != nil {
     c.Errorf("%s", err.String())
@@ -230,16 +230,157 @@ func parseNomRoll(c appengine.Context, r *io.ReadCloser) (*NomRoll, os.Error) {
   return res,nil
 }
 
-type C1Person struct {
-  S string
+func fetchPerson(c appengine.Context, skey string, sn string) os.Error {
+  param := make(url.Values)
+  param.Add("LastNametxt", "")
+  param.Add("ServiceNotxt", sn)
+  param.Add("Search", "Search")
+  param.Add("Searchflag", "formsearch")
+
+  req,err := http.NewRequest("POST",
+      fmt.Sprintf("https://cadetone.aafc.org.au/searchmember.php?PageRef=memberdetails&amp;Members="),
+      strings.NewReader(param.Encode()))
+  if err != nil {
+    c.Errorf("Search Person - sn:%s - %s", sn, err.String())
+    return err
+  }
+  req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+///  session := c1SessionCookie(skey)
+///  injectSession(req,session)
+///  resp, err := GetClient(c).Do(req)
+///  if err != nil {
+///    c.Errorf("SearchPerson - sn:%s - %s", sn, err.String())
+///    return err
+///  }
+///  defer resp.Body.Close()
+
+///  c.Infof("Search Person OK - sn:%s", sn)
+
+///  link,err := parsePSearch(c, &resp.Body)
+  link,err := parsePSearch(c)
+  if err != nil {
+    c.Errorf("Search Person Error - sn:%s - %s", sn, err.String())
+    return err
+  }
+
+  if link == "" {
+    link = "http://www.cadetone.aafc.org.au/personnel/memberdetails.php?PageRef=searchmember&ID=860"
+  }
+
+///resp := &http.Response{}
+
+///  req,err = http.NewRequest("GET", fmt.Sprintf("https://cadetone.aafc.org.au/%s", link), nil)
+///  if err != nil {
+///    c.Errorf("Fetch Person - link:%s - %s", link, err.String())
+///    return err
+///  }
+///  injectSession(req,session)
+///  resp, err = GetClient(c).Do(req)
+///  if err != nil {
+///    c.Errorf("Fetch Person - link:%s - %s", link, err.String())
+///    return err
+///  }
+///  defer resp.Body.Close()
+
+///  c.Infof("Fetch Person OK - link:%s", link)
+
+///  res,err := parsePerson(c, &resp.Body)
+  res,err := parsePerson(c)
+  if err != nil {
+    c.Errorf("Person Page Error - sn:%s - %s", sn, err.String())
+    return err
+  }
+
+  c.Infof(fmt.Sprint(res))
+
+  return err
 }
 
-type C1ActDetail struct {
-  S string
+///func parsePSearch(c appengine.Context, r *io.ReadCloser) (string, os.Error) {
+func parsePSearch(c appengine.Context) (string, os.Error) {
+  tmp := strings.NewReader(samplePSearchHtml)
+  r := &tmp
+  n,err := html.Parse(*r)
+  if err != nil {
+    c.Errorf("%s", err.String())
+    return "",err
+  }
+
+  nc := NewCursor(n)
+  nc = nc.FindById("main1")
+  if !nc.Valid {
+    printNode(c, n, 0)
+    return "", os.NewError("Can't find main1")
+  }
+  nc.Prune()
+
+  curr := nc.FindChildElement("table").NextSiblingElement("table")
+  curr = curr.FindChildElement("tr").NextSiblingElement("tr")
+  curr = curr.FindChildElement("input")
+  if !curr.Valid {
+    return "", os.NewError("Person not found")
+  }
+
+  for _,a := range curr.Attr() {
+    if a.Key == "onclick" {
+      l := strings.Split(a.Val, "'")
+      return l[1], nil
+    }
+  }
+  return "", os.NewError("No onclick attribute")
 }
 
-//TODO - use correct return type
-func GetPersDOB(client *http.Client, session []*http.Cookie, serviceNo []string) (int, os.Error)
+///func parsePerson(c appengine.Context, r *io.ReadCloser) (PersDetail, os.Error) {
+func parsePerson(c appengine.Context) (PersDetail, os.Error) {
+  tmp := strings.NewReader(samplePersonHtml)
+  r := &tmp
+  n,err := html.Parse(*r)
+  if err != nil {
+    c.Errorf("%s", err.String())
+    return PersDetail{},err
+  }
+
+  nc := NewCursor(n)
+  nc = nc.FindById("main1")
+  if !nc.Valid {
+    printNode(c, n, 0)
+    return PersDetail{}, os.NewError("Can't find main1")
+  }
+  nc.Prune()
+
+  res := PersDetail{}
+
+  curr := nc.FindText("Sex:").FindParentElement("tr")
+  res.Sex = curr.Node.Child[1].Child[0].Data[0]
+
+  curr = nc.FindText("Date of Birth:").FindParentElement("tr")
+  curr = curr.Child()[1].Child()[0]
+  res.Dob,err = time.Parse("02 Jan 2006", curr.Data())
+  if err != nil {
+    return PersDetail{},err
+  }
+  res.Dob = time.SecondsToUTC(res.Dob.Seconds())
+
+  curr = nc.FindText("Home Phone:").FindParentElement("tr")
+  if !curr.FindText("Private").Valid {
+    res.HomePh = curr.Node.Child[1].Child[0].Data
+  }
+
+  curr = nc.FindText("Business Phone:").FindParentElement("tr")
+  if !curr.FindText("Private").Valid {
+    res.WorkPh = curr.Node.Child[1].Child[0].Data
+  }
+
+  curr = nc.FindText("Mobile Phone:").FindParentElement("tr")
+  if !curr.FindText("Private").Valid {
+    res.Mobile = curr.Node.Child[1].Child[0].Data
+  }
+
+  curr = nc.FindText("AAFC Email Address:").FindParentElement("tr")
+  res.Email = curr.Node.Child[1].Child[0].Data
+
+  return res,nil
+}
 
 func C1Login(client *http.Client, usr, pwd string) ([]*http.Cookie, os.Error) {
 
@@ -292,19 +433,6 @@ func injectSession(r cookieable, cs []*http.Cookie) {
 type cookieable interface {
   AddCookie(c *http.Cookie)
 }
-
-const doc string = `
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-</html>
-`
-
-const doc2 string =
-`
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-</body>
-`
 
 func toString(n *html.Node) (res string, skip bool) {
   skip = false

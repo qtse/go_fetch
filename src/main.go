@@ -54,7 +54,8 @@ func root(w http.ResponseWriter, r *http.Request) {
 ///  s := fmt.Sprint(session)
 ///  skey := c1SessionKey(session)
 ///  delay.Func("key", fetchActDetail).Call(c, skey, 8525)
-  delay.Func("key", fetchNomRoll).Call(c, skey, 8525)
+///  delay.Func("key", fetchNomRoll).Call(c, skey, 8525)
+  delay.Func("key", fetchPerson).Call(c, skey, "8488695")
   s3 := ""
 
 ///  s2,err := GetActDetail(client, session, []uint{8524})
