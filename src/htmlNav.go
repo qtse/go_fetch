@@ -155,6 +155,15 @@ func (c *NodeCursor) FindChildElement(elmType string) (res *NodeCursor) {
   return res
 }
 
+func (c *NodeCursor) FindParentElement(elmType string) (res *NodeCursor) {
+  for curr := c.Node.Parent; curr != nil; curr = curr.Parent {
+    if curr.Type == html.ElementNode && curr.Data == elmType {
+      return NewCursor(curr)
+    }
+  }
+  return InvalidCursor
+}
+
 // Misc
 func (c *NodeCursor) Prune() {
   for i := 0; c.Node.Child != nil && i < len(c.Node.Child); i++ {
@@ -167,8 +176,7 @@ func (c *NodeCursor) Prune() {
       c.Node.Remove(cc)
       i--
     } else if cc.Type == html.ElementNode {
-      if cc.Data == "br" || cc.Data == "input" || cc.Data == "hr" ||
-          cc.Data == "head" {
+      if cc.Data == "br" || cc.Data == "hr" || cc.Data == "head" {
         c.Node.Remove(cc)
         i--
       } else {
