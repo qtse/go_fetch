@@ -45,31 +45,17 @@ func root(w http.ResponseWriter, r *http.Request) {
     url,_ = user.LogoutURL(c, "/")
     loginText = "Logout"
   }
-///  client := GetClient(c)
-///  session, err := C1Login(client, usr, pwd)
-///  if err != nil {
-///    http.Error(w, err.String(), http.StatusInternalServerError)
-///    return
-///  }
-///  s := fmt.Sprint(session)
-///  skey := c1SessionKey(session)
+  skey, err := C1Login(c, usr, pwd)
+  c.Infof(skey)
+  if err != nil {
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
 ///  delay.Func("key", fetchActDetail).Call(c, skey, 8525)
 ///  delay.Func("key", fetchNomRoll).Call(c, skey, 8525)
   delay.Func("key", fetchPerson).Call(c, skey, "8488695")
   s3 := ""
 
-///  s2,err := GetActDetail(client, session, []uint{8524})
-///  if err != nil {
-///    http.Error(w, err.String(), http.StatusInternalServerError)
-///    return
-///  }
-///  session,err = C1Logout(client, session)
-///  if err != nil {
-///    http.Error(w, err.String(), http.StatusInternalServerError)
-///    return
-///  }
-///  l := []string{s, s3, fmt.Sprint(s2)}
-///  l := []string{s, s3}
   l := []string{skey, s3}
   p := Page{Text: "", TextList: l, Url: url, LoginText: loginText}
   renderTemplate(w, "template", &p)

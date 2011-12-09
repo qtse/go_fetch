@@ -2,7 +2,9 @@ package movo
 
 import (
     "appengine"
+    "appengine/memcache"
     "appengine/urlfetch"
+    "appengine/user"
     html "fixedhtml"
     "http"
     "io"
@@ -382,42 +384,77 @@ func parsePerson(c appengine.Context) (PersDetail, os.Error) {
   return res,nil
 }
 
-func C1Login(client *http.Client, usr, pwd string) ([]*http.Cookie, os.Error) {
+func C1Login(c appengine.Context, usr, pwd string) (string, os.Error) {
+  u := user.Current(c).Email
+
+  itm, err := memcache.Get(c, u + "__c1Sess")
+  if err != nil && err != memcache.ErrCacheMiss {
+    return "",err
+  }
+  if err == nil {
+    return string(itm.Value),nil
+  }
 
   param := make(url.Values)
   param.Add("ServiceNo", usr)
   param.Add("Password", pwd)
 
+  client := GetClient(c)
   resp, err := client.PostForm("https://www.cadetone.aafc.org.au/logon.php", param)
   if err != nil {
-    return nil, err
+    return "", err
   }
   b := make([]byte, 1e6)
   _,err = io.ReadFull(resp.Body, b)
   resp.Body.Close()
 
   if err != io.ErrUnexpectedEOF && err != nil {
-    return nil, err
+    return "", err
   }
 
   if strings.Contains(string(b), "Please try again") {
-    return nil, C1AuthError
+    return "", C1AuthError
   }
 
-  return resp.Cookies(), nil
+  skey := c1SessionKey(resp.Cookies())
+  itm = &memcache.Item{
+    Key:   u + "__c1Sess",
+    Value: []byte(skey),
+  }
+  if err := memcache.Set(c, itm); err != nil {
+    return skey,err
+  }
+
+  return skey,nil
 }
 
-func C1Logout(client *http.Client, session []*http.Cookie) ([]*http.Cookie, os.Error) {
+func C1Logout(c appengine.Context) os.Error {
+  u := user.Current(c).Email
+
+  itm, err := memcache.Get(c, u + "__c1Sess")
+  if err != nil && err != memcache.ErrCacheMiss {
+    return err
+  }
+  if err == memcache.ErrCacheMiss {
+    return nil
+  }
+  skey := string(itm.Value)
+  session := c1SessionCookie(skey)
+
   r,err := http.NewRequest("GET", "https://www.cadetone.aafc.org.au/logout.php", nil)
   if err != nil {
-    return nil,err
+    return err
   }
   injectSession(r,session)
-  resp,err := client.Do(r)
+  client := GetClient(c)
+  _,err = client.Do(r)
   if err != nil {
-    return nil,err
+    return err
   }
-  return resp.Cookies(),nil
+
+  memcache.Delete(c, u + "__c1Sess")
+
+  return nil
 }
 
 func GetClient(c appengine.Context) *http.Client {
