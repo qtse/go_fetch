@@ -1,7 +1,7 @@
 package movo
 
 import (
-    "html"
+    html "fixedhtml"
     "strings"
     )
 
@@ -109,9 +109,55 @@ func (c *NodeCursor) FindText(text string) *NodeCursor {
   return InvalidCursor
 }
 
+func (c *NodeCursor) NextSiblingElement(elmType string) *NodeCursor {
+  return c.findSiblingElement(elmType, 1)
+}
+
+func (c *NodeCursor) PrevSiblingElement(elmType string) *NodeCursor {
+  return c.findSiblingElement(elmType, -1)
+}
+
+func (c *NodeCursor) findSiblingElement(elmType string, dir int8) (res *NodeCursor) {
+  if !c.Valid {
+    return c
+  }
+
+  for i := c.myIndex + 1; i < len(c.parent.Child); i+=int(dir) {
+    cc := c.parent.Child[i]
+    if cc.Type == html.ElementNode && cc.Data == elmType {
+      res = &NodeCursor{Node: cc, parent: c.parent, myIndex: i, Valid: true}
+      return res
+    }
+  }
+
+  res = InvalidCursor
+
+  return res
+}
+
+func (c *NodeCursor) FindChildElement(elmType string) (res *NodeCursor) {
+  if !c.Valid {
+    return c
+  }
+
+  for _,cc := range c.Child() {
+    if cc.Type() == html.ElementNode && cc.Data() == elmType {
+      return cc
+    }
+    res = cc.FindChildElement(elmType)
+    if res.Valid {
+      return res
+    }
+  }
+
+  res = InvalidCursor
+
+  return res
+}
+
 // Misc
 func (c *NodeCursor) Prune() {
-  for i := 0; i < len(c.Node.Child); i++ {
+  for i := 0; c.Node.Child != nil && i < len(c.Node.Child); i++ {
     if cc := c.Node.Child[i]; cc.Type == html.TextNode {
       if cc.Data = strings.TrimSpace(cc.Data); len(cc.Data) == 0 {
         c.Node.Remove(cc)
