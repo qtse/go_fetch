@@ -1,0 +1,66 @@
+<html>
+<head>
+  <title>Test Tool</title>
+</head>
+<body>
+  <script type="text/javascript">
+    var xmlHttp = null;
+
+    function Send()
+    {
+      method = document.getElementById("method").value
+      body = document.getElementById("body").value
+      url = document.getElementById("url").value
+
+      if (method == "GET")
+      {
+        url += "?" + body;
+        body = null
+      } else if (method == "DELETE")
+      {
+        body = null
+      }
+
+      xmlHttp = new XMLHttpRequest();
+      xmlHttp.onreadystatechange = ProcessRequest;
+      xmlHttp.open(method, url, true);
+
+      if (body != null)
+      {
+        xmlHttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+      }
+      xmlHttp.send(body);
+
+      return false
+    }
+
+    function ProcessRequest()
+    {
+      if (xmlHttp.readyState == 4)
+      {
+        document.getElementById("status").innerHTML = xmlHttp.status + " - " + xmlHttp.statusText;
+        document.getElementById("response").innerHTML = xmlHttp.responseText;
+      }
+      else
+      {
+        document.getElementById("status").innerHTML = ""
+        document.getElementById("response").innerHTML = ""
+      }
+    }
+  </script>
+  <pre id="status"></pre>
+  <pre id="response"></pre>
+  <form action="#" onsubmit="Send()">
+    <select id="method">
+      <option value="GET">GET</option>
+      <option value="POST">POST</option>
+      <option value="PUT">PUT</option>
+      <option value="DELETE">DELETE</option>
+    </select>
+    <input id="url" type="text" placeholder="URL"></input>
+    <input id="body" type="text" placeholder="Body"></input>
+    <input type="button" value="Send" onclick="Send()"></input>
+  </form>
+</body>
+</html>
+
