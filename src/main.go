@@ -57,9 +57,7 @@ func courseHandler(w http.ResponseWriter, r *http.Request) {
           http.Error(w, err.String(), http.StatusInternalServerError)
           return
         }
-///        delay.Func("key", fetchActDetail).Call(c, skey, actId)
         delayedFetchActDetail.Call(c, skey, actId)
-///        fetchActDetail(c, skey, actId)
         w.WriteHeader(http.StatusAccepted)
         c.Infof(skey + ": " + strconv.Itoa(actId))
         w.Write([]byte("ActId:" + strconv.Itoa(actId) + "\n"))
