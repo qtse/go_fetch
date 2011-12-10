@@ -7,7 +7,7 @@ import (
     "appengine/user"
     html "fixedhtml"
     "http"
-    "io"
+///    "io"
     "os"
     "strconv"
     "strings"
@@ -84,21 +84,28 @@ func fetchActDetail(c appengine.Context, skey string, actId int) os.Error {
 
 ///  c.Infof("Fetch Details OK - actId:%d", actId)
 
-///  res,err := parseActDetail(c, &resp.Body)
-  res,err := parseActDetail(c)
+///  res := &ActDetail{}
+  res,err := RetrieveActDetails(c, actId)
+  if err != nil {
+    c.Errorf("Fetch Detail Location - actId:%d - %s", actId, err.String())
+    return err
+  }
+
+///  res,err = parseActDetail(c, &resp.Body, res)
+  res,err = parseActDetail(c, res)
   if err != nil {
     c.Errorf("Fetch Details - actId:%d - %s", actId, err.String())
     return err
   }
-  res.ActId = actId
 
+  res.Persist(c)
   c.Infof(fmt.Sprint(res))
 
   return err
 }
 
-///func parseActDetail(c appengine.Context, r *io.ReadCloser) (*ActDetail, os.Error) {
-func parseActDetail(c appengine.Context) (*ActDetail, os.Error) {
+///func parseActDetail(c appengine.Context, r *io.ReadCloser, res *ActDetail) (*ActDetail, os.Error) {
+func parseActDetail(c appengine.Context, res *ActDetail) (*ActDetail, os.Error) {
   tmp := strings.NewReader(sampleActHtml)
   r := &tmp
   n,err := html.Parse(*r)
@@ -110,8 +117,6 @@ func parseActDetail(c appengine.Context) (*ActDetail, os.Error) {
   nc := NewCursor(n)
   nc = nc.FindById("body1")
   nc.Prune()
-
-  res := &ActDetail{}
 
   curr := nc.FindText("Activity Type:").Parent().NextSibling().Node.Child[0]
   res.Type = curr.Data
@@ -395,28 +400,29 @@ func C1Login(c appengine.Context, usr, pwd string) (string, os.Error) {
     return string(itm.Value),nil
   }
 
-  param := make(url.Values)
-  param.Add("ServiceNo", usr)
-  param.Add("Password", pwd)
+///  param := make(url.Values)
+///  param.Add("ServiceNo", usr)
+///  param.Add("Password", pwd)
 
-  client := GetClient(c)
-  resp, err := client.PostForm("https://www.cadetone.aafc.org.au/logon.php", param)
-  if err != nil {
-    return "", err
-  }
-  b := make([]byte, 1e6)
-  _,err = io.ReadFull(resp.Body, b)
-  resp.Body.Close()
+///  client := GetClient(c)
+///  resp, err := client.PostForm("https://www.cadetone.aafc.org.au/logon.php", param)
+///  if err != nil {
+///    return "", err
+///  }
+///  b := make([]byte, 1e6)
+///  _,err = io.ReadFull(resp.Body, b)
+///  resp.Body.Close()
 
-  if err != io.ErrUnexpectedEOF && err != nil {
-    return "", err
-  }
+///  if err != io.ErrUnexpectedEOF && err != nil {
+///    return "", err
+///  }
 
-  if strings.Contains(string(b), "Please try again") {
-    return "", C1AuthError
-  }
+///  if strings.Contains(string(b), "Please try again") {
+///    return "", C1AuthError
+///  }
 
-  skey := c1SessionKey(resp.Cookies())
+///  skey := c1SessionKey(resp.Cookies())
+  skey := "12345"
   itm = &memcache.Item{
     Key:   u + "__c1Sess",
     Value: []byte(skey),

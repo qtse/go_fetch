@@ -21,6 +21,10 @@ func init() {
   http.HandleFunc("/courses/", courseHandler)
 }
 
+var (
+    delayedFetchActDetail = delay.Func("fetchActDetail", fetchActDetail)
+    )
+
 func courseHandler(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
 
@@ -48,7 +52,14 @@ func courseHandler(w http.ResponseWriter, r *http.Request) {
           http.Error(w, "C1 Session expired", http.StatusUnauthorized)
           return
         }
-        delay.Func("key", fetchActDetail).Call(c, skey, actId)
+        a := ActDetail{ActId:actId}
+        if err = a.Persist(c); err != nil {
+          http.Error(w, err.String(), http.StatusInternalServerError)
+          return
+        }
+///        delay.Func("key", fetchActDetail).Call(c, skey, actId)
+        delayedFetchActDetail.Call(c, skey, actId)
+///        fetchActDetail(c, skey, actId)
         w.WriteHeader(http.StatusAccepted)
         c.Infof(skey + ": " + strconv.Itoa(actId))
         w.Write([]byte("ActId:" + strconv.Itoa(actId) + "\n"))
