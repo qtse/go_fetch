@@ -420,6 +420,7 @@ func C1Login(c appengine.Context, usr, pwd string) (string, os.Error) {
   itm = &memcache.Item{
     Key:   u + "__c1Sess",
     Value: []byte(skey),
+    Expiration: 1200,
   }
   if err := memcache.Set(c, itm); err != nil {
     return skey,err
@@ -508,17 +509,70 @@ func printNode(c appengine.Context, n *html.Node, ind int) {
     }
   }
 }
+func c1CurrSession(c appengine.Context) (string, os.Error) {
+  u := user.Current(c).Email
+
+  itm, err := memcache.Get(c, u + "__c1Sess")
+  if err != nil && err != memcache.ErrCacheMiss {
+    c.Errorf("memcache Error: " + err.String())
+    return "", err
+  } else if err == nil {
+    c.Infof("Cache hit")
+    return string(itm.Value), nil
+  }
+
+  c.Infof("Cache miss")
+  return "", nil
+}
+
+func c1IsLoggedIn(c appengine.Context) (bool, os.Error) {
+  s,err := c1CurrSession(c)
+  if err != nil {
+    return false, err
+  } else if s == "" {
+    return false, nil
+  }
+
+  return true, nil
+}
 
 func c1LoginHandler(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
-  C1Login(c, usr, pwd)
-  http.Redirect(w, r, "/", 302)
+  if l,err := c1IsLoggedIn(c); err != nil {
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  } else if l {
+///    http.Redirect(w, r, "/", http.StatusFound)
+    http.Redirect(w, r, "/index", http.StatusFound)
+    return
+  }
+
+  if r.Method == "GET" {
+    w.Write([]byte(
+          "<html><body><form action='/c1Login' method='POST'>"+
+          "<input type='text' name='usr'></input>"+
+          "<input type='password' name='pwd'></input>"+
+          "<input type='submit' value='Submit'></input>"+
+          "</form></body></html>"))
+    return
+  } else if r.Method == "POST" {
+    usr := r.FormValue("usr")
+    pwd := r.FormValue("pwd")
+    _,err := C1Login(c, usr, pwd)
+    if err == C1AuthError {
+      http.Error(w, err.String(), http.StatusUnauthorized)
+      return
+    }
+    http.Redirect(w, r, "/index", http.StatusFound)
+///    http.Redirect(w, r, "/", http.StatusFound)
+  }
 }
 
 func c1LogoutHandler(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
   C1Logout(c)
-  http.Redirect(w, r, "/", 302)
+///  http.Redirect(w, r, "/", http.StatusFound)
+  http.Redirect(w, r, "/index", http.StatusFound)
 }
 
 func init() {
