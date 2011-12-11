@@ -27,8 +27,10 @@ type ActDetail struct {
   Name string
   Desc string
   Location string
-  Start *time.Time
-  End *time.Time
+  StartJson string `json:"Start"`
+  Start *time.Time `json:",omitempty"`
+  EndJson string `json:"End"`
+  End *time.Time `json:",omitempty"`
   NCadets int
   NStaff int
 }
@@ -131,6 +133,7 @@ func parseActDetail(c appengine.Context, res *ActDetail) (*ActDetail, os.Error) 
   res.Location = curr.Data
 
   curr = nc.FindText("Start Date and Time:").Parent().NextSibling().Node.Child[0]
+  res.Start.ZoneOffset = int(HourToSeconds(10))
   res.Start,err = time.Parse("02 Jan 2006\u00a015:04", curr.Data)
   res.Start = time.SecondsToUTC(res.Start.Seconds())
   if err != nil {
@@ -139,6 +142,7 @@ func parseActDetail(c appengine.Context, res *ActDetail) (*ActDetail, os.Error) 
 
   curr = nc.FindText("Finish Date and Time:").Parent().NextSibling().Node.Child[0]
   res.End,err = time.Parse("02 Jan 2006\u00a015:04", curr.Data)
+  res.End.ZoneOffset = int(HourToSeconds(10))
   res.End = time.SecondsToUTC(res.End.Seconds())
   if err != nil {
     return nil,err
