@@ -3,50 +3,23 @@
   <title>Test Tool</title>
 </head>
 <body>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
   <script type="text/javascript">
-    var xmlHttp = null;
-
-    function Send()
-    {
-      method = document.getElementById("method").value
-      body = document.getElementById("body").value
-      url = document.getElementById("url").value
-
-      if (method == "GET")
-      {
-        url += "?" + body;
-        body = null
-      } else if (method == "DELETE")
-      {
-        body = null
-      }
-
-      xmlHttp = new XMLHttpRequest();
-      xmlHttp.onreadystatechange = ProcessRequest;
-      xmlHttp.open(method, url, true);
-
-      if (body != null)
-      {
-        xmlHttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
-      }
-      xmlHttp.send(body);
-
-      return false
-    }
-
-    function ProcessRequest()
-    {
-      if (xmlHttp.readyState == 4)
-      {
-        document.getElementById("status").innerHTML = xmlHttp.status + " - " + xmlHttp.statusText;
-        document.getElementById("response").innerHTML = xmlHttp.responseText;
-      }
-      else
-      {
-        document.getElementById("status").innerHTML = ""
-        document.getElementById("response").innerHTML = ""
-      }
-    }
+    $(document).ready(function () {
+          $("#send").click(function() {
+              $("#status").html("");
+              $("#response").html("");
+              $.ajax({
+                url:$("#url").val(),
+                data:$("#body").val(),
+                type:$("#method").val(),
+                complete: function(jqxhr) {
+                  $("#status").html(jqxhr.status + " - " + jqxhr.statusText);
+                  $("#response").html(jqxhr.responseText);
+                },
+                });
+            })
+        })
   </script>
   <pre id="status"></pre>
   <pre id="response"></pre>
@@ -57,9 +30,9 @@
       <option value="PUT">PUT</option>
       <option value="DELETE">DELETE</option>
     </select>
-    <input id="url" type="text" placeholder="URL"></input>
+    <input id="url" type="text" placeholder="URL" value="/courses"></input>
     <input id="body" type="text" placeholder="Body"></input>
-    <input type="button" value="Send" onclick="Send()"></input>
+    <input id="send" type="button" value="Send"></input>
   </form>
 </body>
 </html>
