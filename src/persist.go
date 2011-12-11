@@ -82,16 +82,24 @@ func RetrieveActDetails(c appengine.Context, actId int) (res *ActDetail, err os.
     if err := datastore.Get(c, key, &d); err != nil {
       return nil, err
     }
-    // XXX Add to cache
+    buf := bytes.NewBufferString("")
+    enc := gob.NewEncoder(buf)
+    enc.Encode(d)
+
+    itm := &memcache.Item{
+            Key:    "actId__" + strconv.Itoa(actId),
+            Value:  buf.Bytes(),
+         }
+
+  err = memcache.Set(c, itm)
+c.Debugf("Request cache to memcache")
   }
   return d.fromDS(), nil
 }
 
 func (a *ActDetail) Persist(c appengine.Context) os.Error {
   d := a.toDS()
-c.Debugf("Done converting to DSActDetail")
   key := datastore.NewKey(c, "DSActDetail", "", int64(d.ActId), nil)
-c.Debugf("Done Creating Key")
   _,err := datastore.Put(c, key, d)
 c.Debugf("Done persisting to datastore")
   if err != nil {
@@ -197,5 +205,4 @@ func GetActiveAct(c appengine.Context) ([]*ActDetail, os.Error) {
 
 func init() {
   gob.Register(ActiveAct{})
-  gob.Register(ActDetail{})
 }
