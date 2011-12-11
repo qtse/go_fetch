@@ -3,10 +3,11 @@ package movo
 import (
     "appengine"
     "appengine/delay"
-///    "appengine/user"
+    "appengine/memcache"
 ///    "bytes"
 ///    "fmt"
     "http"
+    "json"
     "os"
     "strconv"
     "strings"
@@ -37,6 +38,21 @@ func courseHandler(w http.ResponseWriter, r *http.Request) {
     // All courses
     switch (r.Method) {
       case "GET":
+        res,err := GetActiveAct(c)
+        if err != nil {
+          http.Error(w, err.String(), http.StatusInternalServerError)
+        }
+        for _,a := range res {
+          a.StartJson = a.Start.Format("2006-01-02T15:04:05")
+          a.Start = nil
+          a.EndJson = a.End.Format("2006-01-02T15:04:05")
+          a.End = nil
+        }
+        b,err := json.Marshal(res)
+        if err != nil {
+          http.Error(w, err.String(), http.StatusInternalServerError)
+        }
+        w.Write(b)
       case "POST":
         actId,err := strconv.Atoi(r.FormValue("actId"))
         if err != nil {
@@ -57,6 +73,7 @@ func courseHandler(w http.ResponseWriter, r *http.Request) {
           http.Error(w, err.String(), http.StatusInternalServerError)
           return
         }
+        memcache.Delete(c, "activeAct")
         delayedFetchActDetail.Call(c, skey, actId)
         w.WriteHeader(http.StatusAccepted)
         c.Infof(skey + ": " + strconv.Itoa(actId))
@@ -69,10 +86,6 @@ func courseHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Not Allowed", http.StatusMethodNotAllowed)
         return
     }
-  }
-  w.Write([]byte(r.Method + " " + r.URL.String() + " " + strconv.Itoa(len(path)) + " "))
-  for _,s := range path {
-    w.Write([]byte("/" + s))
   }
 }
 
