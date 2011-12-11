@@ -8,8 +8,12 @@ import (
     "gob"
     "os"
     "strconv"
+    "time"
     )
 
+/********************************************************
+ * DSActDetail
+ ********************************************************/
 type DSActDetail struct {
   ActId int
   Type string
@@ -78,6 +82,7 @@ func RetrieveActDetails(c appengine.Context, actId int) (res *ActDetail, err os.
     if err := datastore.Get(c, key, &d); err != nil {
       return nil, err
     }
+    // XXX Add to cache
   }
   return d.fromDS(), nil
 }
@@ -108,6 +113,89 @@ c.Debugf("Request cache to memcache")
   return err
 }
 
+/********************************************************
+ * ActiveAct
+ ********************************************************/
+type ActiveAct []int
+
+var (
+    activeForward = DayToSeconds(90)
+    activeBehind = DayToSeconds(14)
+    )
+
+func UpdateActiveAct(c appengine.Context) os.Error {
+  err := memcache.Delete(c, "activeAct")
+  if err != nil {
+    return err
+  }
+  _,err = GetActiveAct(c)
+  return err
+}
+
+func GetActiveAct(c appengine.Context) ([]*ActDetail, os.Error) {
+  var aa ActiveAct
+  if itm, err := memcache.Get(c, "activeAct");
+      err != nil && err != memcache.ErrCacheMiss {
+    return nil, err
+  } else if err == nil {
+    // Cache hit
+    buf := bytes.NewBuffer(itm.Value)
+    dec := gob.NewDecoder(buf)
+    dec.Decode(&aa)
+  } else {
+    // Cache miss
+    q := datastore.NewQuery("DSActDetail").
+         Filter("End >", datastore.SecondsToTime(time.Seconds() - activeBehind))
+
+    ds := make([]DSActDetail, 0)
+    if _,err = q.GetAll(c, &ds); err != nil {
+      return nil, err
+    }
+    aa = make(ActiveAct, 0)
+    for _,d := range ds {
+      if d.Start.Time().Seconds() <= time.Seconds() + activeForward {
+        aa = append(aa, d.ActId)
+        buf := bytes.NewBufferString("")
+        enc := gob.NewEncoder(buf)
+        enc.Encode(d)
+
+        itm := &memcache.Item{
+                Key:    "actId__" + strconv.Itoa(d.ActId),
+                Value:  buf.Bytes(),
+             }
+
+        err = memcache.Set(c, itm)
+        c.Debugf("Request cache to memcache")
+      }
+    }
+
+    buf := bytes.NewBufferString("")
+    enc := gob.NewEncoder(buf)
+    enc.Encode(aa)
+
+    itm = &memcache.Item{
+      Key: "activeAct",
+      Value: buf.Bytes(),
+      Expiration: int32(DayToSeconds(1)),
+    }
+    err = memcache.Set(c, itm)
+    if err != nil {
+      return nil, err
+    }
+  }
+
+  var res []*ActDetail
+  for _,id := range aa {
+    a,err := RetrieveActDetails(c, id)
+    if err != nil {
+      return nil, err
+    }
+    res = append(res, a)
+  }
+  return res, nil
+}
+
 func init() {
+  gob.Register(ActiveAct{})
   gob.Register(ActDetail{})
 }
