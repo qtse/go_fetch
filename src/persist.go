@@ -7,6 +7,7 @@ import (
     "bytes"
     "fmt"
     "gob"
+    "http"
     "os"
     "strconv"
     "time"
@@ -108,8 +109,16 @@ func (a *ActDetail) Persist(c appengine.Context) os.Error {
     return nil
   }
 
-  // TODO - better notification than writing to log
-  c.Infof(fmt.Sprintf("Activity %d has changed!!", a.ActId))
+  // TODO - better way for notification than putting everything here
+  logMsg := fmt.Sprintf("Activity %d (%s) has changed!!", a.ActId, a.Name)
+  c.Infof(logMsg)
+  mnfDetails.Set("text", logMsg)
+  if resp, err := http.Get(
+      "https://www.mynetfone.com.au/send-sms?" + mnfDetails.Encode()); err != nil {
+    c.Errorf("SMS failed")
+  } else if resp.StatusCode != 200 {
+    c.Errorf(fmt.Sprintf("SMS failed - %d", resp.StatusCode))
+  }
 
   d := a.toDS()
   key := datastore.NewKey(c, "DSActDetail", "", int64(d.ActId), nil)
