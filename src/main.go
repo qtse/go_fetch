@@ -40,7 +40,9 @@ func courseHandler(w http.ResponseWriter, r *http.Request) {
       case "GET":
         res,err := GetActiveAct(c)
         if err != nil {
+          c.Errorf(err.String())
           http.Error(w, err.String(), http.StatusInternalServerError)
+          return
         }
         for _,a := range res {
           a.StartJson = a.Start.Format("2006-01-02T15:04:05")
@@ -50,26 +52,37 @@ func courseHandler(w http.ResponseWriter, r *http.Request) {
         }
         b,err := json.Marshal(res)
         if err != nil {
+          c.Errorf(err.String())
           http.Error(w, err.String(), http.StatusInternalServerError)
+          return
         }
         w.Write(b)
       case "POST":
         actId,err := strconv.Atoi(r.FormValue("actId"))
         if err != nil {
+          c.Errorf(err.String())
           http.Error(w, "actId not found", http.StatusBadRequest)
           return
         }
 
         skey, err := c1CurrSession(c)
         if err != nil {
+          c.Errorf(err.String())
           http.Error(w, err.String(), http.StatusInternalServerError)
           return
         } else if skey == "" {
+          c.Infof("C1 Session expired")
           http.Error(w, "C1 Session expired", http.StatusUnauthorized)
           return
         }
-        a := ActDetail{ActId:actId}
+        a,err := RetrieveActDetails(c, actId)
+        if err != nil {
+          c.Errorf(err.String())
+          http.Error(w, err.String(), http.StatusInternalServerError)
+          return
+        }
         if err = a.Persist(c); err != nil {
+          c.Errorf(err.String())
           http.Error(w, err.String(), http.StatusInternalServerError)
           return
         }
@@ -83,6 +96,7 @@ func courseHandler(w http.ResponseWriter, r *http.Request) {
       case "DELETE":
         w.Header().Add("Allow", "GET")
         w.Header().Add("Allow", "POST")
+        c.Infof("Method not allowed")
         http.Error(w, "Not Allowed", http.StatusMethodNotAllowed)
         return
     }
@@ -105,10 +119,12 @@ func root(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
   var err os.Error
   if _,_,err = IsAuth(c); err != nil {
+    c.Errorf(err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
   }
   if l, err := c1IsLoggedIn(c); err != nil {
+    c.Errorf(err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
   } else if !l {
