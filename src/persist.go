@@ -5,6 +5,7 @@ import (
     "appengine/datastore"
     "appengine/memcache"
     "bytes"
+    "fmt"
     "gob"
     "os"
     "strconv"
@@ -79,7 +80,9 @@ func RetrieveActDetails(c appengine.Context, actId int) (res *ActDetail, err os.
   } else {
     // Cache miss
     key := datastore.NewKey(c, "DSActDetail", "", int64(actId), nil)
-    if err := datastore.Get(c, key, &d); err != nil {
+    if err := datastore.Get(c, key, &d); err == datastore.ErrNoSuchEntity {
+      return &ActDetail{ActId: actId}, nil
+    } else if err != nil {
       return nil, err
     }
     buf := bytes.NewBufferString("")
@@ -98,6 +101,16 @@ c.Debugf("Request cache to memcache")
 }
 
 func (a *ActDetail) Persist(c appengine.Context) os.Error {
+  if ch,err := a.Changed(c); err != nil {
+    return err
+  } else if !ch {
+    c.Debugf(fmt.Sprintf("Activity %d has not changed.", a.ActId))
+    return nil
+  }
+
+  // TODO - better notification than writing to log
+  c.Infof(fmt.Sprintf("Activity %d has changed!!", a.ActId))
+
   d := a.toDS()
   key := datastore.NewKey(c, "DSActDetail", "", int64(d.ActId), nil)
   _,err := datastore.Put(c, key, d)
@@ -119,6 +132,16 @@ c.Debugf("Done persisting to datastore")
 c.Debugf("Request cache to memcache")
 
   return err
+}
+
+func (a *ActDetail) Changed(c appengine.Context) (bool,os.Error) {
+  o,err := RetrieveActDetails(c, a.ActId)
+  if err == datastore.ErrNoSuchEntity {
+    return true, nil
+  } else if err != nil {
+    return true,err
+  }
+  return !a.Equals(o),nil
 }
 
 /********************************************************
