@@ -34,6 +34,20 @@ type ActDetail struct {
   NCadets int
   NStaff int
 }
+func (a *ActDetail) Equals(b *ActDetail) bool {
+  return a.ActId == b.ActId &&
+         a.Type == b.Type &&
+         a.Name == b.Name &&
+         a.Location == b.Location &&
+         ((a.Start == nil && b.Start == nil) ||
+          (a.Start != nil && b.Start != nil &&
+          a.Start.Seconds() == b.Start.Seconds())) &&
+         ((a.End == nil && b.End == nil) ||
+          (a.End != nil && b.End != nil &&
+          a.End.Seconds() == b.End.Seconds())) &&
+         a.NCadets == b.NCadets &&
+         a.NStaff == b.NStaff
+}
 
 type NomRoll struct {
   ActId int
@@ -525,11 +539,11 @@ func c1CurrSession(c appengine.Context) (string, os.Error) {
     c.Errorf("memcache Error: " + err.String())
     return "", err
   } else if err == nil {
-    c.Infof("Cache hit")
+    c.Debugf("Cache hit")
     return string(itm.Value), nil
   }
 
-  c.Infof("Cache miss")
+  c.Debugf("Cache miss")
   return "", nil
 }
 
